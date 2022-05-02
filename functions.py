@@ -74,3 +74,38 @@ def price_of_popular_cryptos_during_a_particular_year(df,year):
     ax.set_title('Price of Coin by Month ' + str(year))
     plt.show()
     return df
+def sentiment_analysis(df): 
+    sid = SentimentIntensityAnalyzer()
+    df['scores'] = df['text'].apply(lambda text: sid.polarity_scores(text))
+    df['compound']  = df['scores'].apply(lambda score_dict: score_dict['compound'])
+    df['comp_score'] = df['compound'].apply(lambda c: 1 if c >=0 else -1)
+    df = df.drop(['scores', 'compound'], axis = 1)
+    df["Date_extracted"] = df["date"].dt.date
+    def text_extracting(data):
+        data = word_tokenize(data)
+        for i in range(len(data)):
+            if data[i] == 'bitcoin':
+                return 'bitcoin'
+            elif data[i] == 'ethereum':
+                return 'ethereum'
+            elif data[i] == 'tether':
+                return 'tether'
+            elif data[i] == 'binance-coin':
+                return 'binance-coin'
+            elif data[i] == 'cardano':
+                return 'cardano'
+        return 'rest'
+    df['crypto'] = df['text'].apply(text_extracting)
+    df = df.sort_values('Date_extracted')
+    df['Year'] = df['date'].dt.year
+    df['Month'] = df['date'].dt.month
+    df['Day'] = df['date'].dt.day
+    return df
+# This method takes year and returns plots of news per every year
+def sentiment_of_popular_cryptos_during_a_particular_year(year):
+    news1 = news_of_popular_cryptos2[(news_of_popular_cryptos2['Year']==year)]
+    ax = sns.lineplot(data=news1, x='Month', y='comp_score', hue='crypto',marker='o',ci= None)
+    ax.set(xticks=news_of_popular_cryptos2.Month.values)
+    plt.title('news of Coin by Month ' + str(year))
+    plt.show()
+    return news1
