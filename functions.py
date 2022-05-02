@@ -74,6 +74,11 @@ def price_of_popular_cryptos_during_a_particular_year(df,year):
     ax.set_title('Price of Coin by Month ' + str(year))
     plt.show()
     return df
+"""
+This method does sentiment analysis.
+Input Param: df = The news/reddit/bitcoinTalk dataframe used to create the plot
+Returns: The news/reddit/bitcoinTalk dataframe
+"""
 def sentiment_analysis(df): 
     sid = SentimentIntensityAnalyzer()
     df['scores'] = df['text'].apply(lambda text: sid.polarity_scores(text))
@@ -101,6 +106,12 @@ def sentiment_analysis(df):
     df['Month'] = df['date'].dt.month
     df['Day'] = df['date'].dt.day
     return df
+"""
+This method plots the sentiment  distribution during the year.
+Input Param: df = The sentiment dataframe used to create the plot
+             year = The year for which we have to generate the plot
+Returns: The sentiment dataframe of the corressponding year
+"""
 # This method takes year and returns plots of news per every year
 def sentiment_of_popular_cryptos_during_a_particular_year(year):
     news1 = news_of_popular_cryptos2[(news_of_popular_cryptos2['Year']==year)]
@@ -109,3 +120,54 @@ def sentiment_of_popular_cryptos_during_a_particular_year(year):
     plt.title('news of Coin by Month ' + str(year))
     plt.show()
     return news1
+"""
+This method plots the sentiment and price of a particular coin distribution during the year.
+Input Param: coin = The coin
+             year = The year for which we have to generate the plot
+"""
+#plotting price and sentiment in a single plot for bitcoin
+def sentiment_price_of_popular_cryptos_during_a_particular_year(year,coin):
+    popular_cryptos2 = [coin.lower()]
+    news_of_popular_cryptos2 = news[news['crypto'] == 'bitcoin']
+    news_year = news_of_popular_cryptos2[(news_of_popular_cryptos2['Year']==year)]
+    prices_of_popular_cryptos = crypto_prices_df[crypto_prices_df['currency'].isin(popular_cryptos2)]
+    price_year = prices_of_popular_cryptos[(prices_of_popular_cryptos['Year']==year)]
+    fig, (ax1,ax2) = plt.subplots(nrows=2, sharex=True, subplot_kw=dict(frameon=False)) # frameon=False removes frames
+    
+    plt.subplots_adjust(hspace=.2)
+    plt.title('Fluctuations in price and sentiment of '+coin+ ' for year ' + str(year) , y= 2.2)
+    ax1.grid()
+    ax2.grid()
+    ax1.plot(news_year['Month'], news_year['comp_score'], color='r',label ='sentiment')
+    ax2.plot(price_year['Month'], price_year['price'], color='b', linestyle='--',label ='price')
+    ax1.legend(bbox_to_anchor =(1.1, 0.8))
+    ax2.legend(bbox_to_anchor =(1.32, 1.6))
+    plt.xticks([1,2,3,4,5,6,7,8,9,10,11,12])
+    plt.xlabel('Months')
+    ax1.set_ylabel('Sentiment')
+    ax2.set_ylabel('Price')
+    plt.show()
+"""
+This method prepares price data for ML
+Input Param: df = price
+Returns: The price dataframe
+"""    
+def price_extraction(df):
+    df["Date_extracted"] = df["date"].dt.date
+    df = df.sort_values('Date_extracted')
+    df['price_variation'] = df['price'].diff()
+    df['price_raise/drop'] = np.where(df['price_variation']>0, 1, -1)
+    df = df.groupby(['Date_extracted'])['price_raise/drop'].sum().reset_index()
+    df['price_raise/drop'] = np.where(df['price_raise/drop']>0,1,-1)
+    return df
+    plt.show()
+"""
+This method prepares sentiment data for ML
+Input Param: df = price
+Returns: The price dataframe
+"""
+#combining price and news for all coins
+def comp_score(df):
+    df = df.groupby(['Date_extracted'])['comp_score'].sum().reset_index()
+    df['comp_score'] = np.where(df['comp_score']>0,1,-1)
+    return df
