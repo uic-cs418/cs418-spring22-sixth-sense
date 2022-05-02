@@ -171,3 +171,42 @@ def comp_score(df):
     df = df.groupby(['Date_extracted'])['comp_score'].sum().reset_index()
     df['comp_score'] = np.where(df['comp_score']>0,1,-1)
     return df
+#baseline ML model 
+class Bitcoin_label_baseline():
+    def init(self):
+        self.mode_value = 0 
+    def fit(self, X, y,Z):
+        index = Z.max()
+        self.mode_value = index
+    def predict(self, X):
+        length = X.size
+        y_predict = np.empty(length,dtype=int)
+        for i in range(length):
+            y_predict[i] = self.mode_value
+        return y_predict
+#converting data in a format compatible with svm
+def data_svmReliable_conversion(z):
+    z= z.values
+    return z.reshape(-1, 1)
+# learning the classifier
+def learn_classifier(X_train, y_train, kernel):
+    classifier = sklearn.svm.SVC(kernel = kernel)
+    return classifier.fit(X_train,y_train)
+#evaluate the classifier
+def evaluate_classifier(classifier, X_validation, y_validation):
+    return sklearn.metrics.accuracy_score(y_validation , classifier.predict(X_validation))
+#finding the best kernel for svm
+def best_model_selection(kf, X, y):
+    scores = []
+    dict = {}
+    for kernel in ['linear', 'rbf', 'poly', 'sigmoid']:
+        for train_index, test_index in kf.split(X):
+            X_train, X_test, y_train, y_test = X[train_index], X[test_index], y[train_index], y[test_index]
+            classifier = learn_classifier(X_train,y_train,kernel)
+            scores.append(evaluate_classifier(classifier, X_test, y_test))
+        dict[kernel] = np.mean(scores)
+        scores = []
+    return max(dict , key = dict.get)
+#prediction on test data
+def classify(classifier, x_test):
+    return classifier.predict(x_test)
