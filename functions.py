@@ -113,10 +113,10 @@ Input Param: df = The sentiment dataframe used to create the plot
 Returns: The sentiment dataframe of the corressponding year
 """
 # This method takes year and returns plots of news per every year
-def sentiment_of_popular_cryptos_during_a_particular_year(year):
-    news1 = news_of_popular_cryptos2[(news_of_popular_cryptos2['Year']==year)]
+def sentiment_of_popular_cryptos_during_a_particular_year(year, i):
+    news1 = i[(i['Year']==year)]
     ax = sns.lineplot(data=news1, x='Month', y='comp_score', hue='crypto',marker='o',ci= None)
-    ax.set(xticks=news_of_popular_cryptos2.Month.values)
+    ax.set(xticks=i.Month.values)
     plt.title('news of Coin by Month ' + str(year))
     plt.show()
     return news1
@@ -126,11 +126,11 @@ Input Param: coin = The coin
              year = The year for which we have to generate the plot
 """
 #plotting price and sentiment in a single plot for bitcoin
-def sentiment_price_of_popular_cryptos_during_a_particular_year(year,coin):
+def sentiment_price_of_popular_cryptos_during_a_particular_year(year,coin,sentiment, price):
     popular_cryptos2 = [coin.lower()]
-    news_of_popular_cryptos2 = news[news['crypto'] == 'bitcoin']
+    news_of_popular_cryptos2 = sentiment[sentiment['crypto'] == 'bitcoin']
     news_year = news_of_popular_cryptos2[(news_of_popular_cryptos2['Year']==year)]
-    prices_of_popular_cryptos = crypto_prices_df[crypto_prices_df['currency'].isin(popular_cryptos2)]
+    prices_of_popular_cryptos = price[price['currency'].isin(popular_cryptos2)]
     price_year = prices_of_popular_cryptos[(prices_of_popular_cryptos['Year']==year)]
     fig, (ax1,ax2) = plt.subplots(nrows=2, sharex=True, subplot_kw=dict(frameon=False)) # frameon=False removes frames
     
@@ -171,42 +171,5 @@ def comp_score(df):
     df = df.groupby(['Date_extracted'])['comp_score'].sum().reset_index()
     df['comp_score'] = np.where(df['comp_score']>0,1,-1)
     return df
-#baseline ML model 
-class Bitcoin_label_baseline():
-    def init(self):
-        self.mode_value = 0 
-    def fit(self, X, y,Z):
-        index = Z.max()
-        self.mode_value = index
-    def predict(self, X):
-        length = X.size
-        y_predict = np.empty(length,dtype=int)
-        for i in range(length):
-            y_predict[i] = self.mode_value
-        return y_predict
-#converting data in a format compatible with svm
-def data_svmReliable_conversion(z):
-    z= z.values
-    return z.reshape(-1, 1)
-# learning the classifier
-def learn_classifier(X_train, y_train, kernel):
-    classifier = sklearn.svm.SVC(kernel = kernel)
-    return classifier.fit(X_train,y_train)
-#evaluate the classifier
-def evaluate_classifier(classifier, X_validation, y_validation):
-    return sklearn.metrics.accuracy_score(y_validation , classifier.predict(X_validation))
-#finding the best kernel for svm
-def best_model_selection(kf, X, y):
-    scores = []
-    dict = {}
-    for kernel in ['linear', 'rbf', 'poly', 'sigmoid']:
-        for train_index, test_index in kf.split(X):
-            X_train, X_test, y_train, y_test = X[train_index], X[test_index], y[train_index], y[test_index]
-            classifier = learn_classifier(X_train,y_train,kernel)
-            scores.append(evaluate_classifier(classifier, X_test, y_test))
-        dict[kernel] = np.mean(scores)
-        scores = []
-    return max(dict , key = dict.get)
-#prediction on test data
-def classify(classifier, x_test):
-    return classifier.predict(x_test)
+
+        
